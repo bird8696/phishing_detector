@@ -12,3 +12,7 @@ env/
 
 # VS Code 설정
 .vscode/
+
+# Google OAuth 인증 정보
+credentials.json
+token.json

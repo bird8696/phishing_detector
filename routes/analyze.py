@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from models.schemas import EmailRequest, AnalysisResult
 from services.analyzer import analyze_email
+from services.gmail_service import get_recent_emails
 
 # APIRouter : FastAPI에서 엔드포인트를 모아서 관리하는 도구
 router = APIRouter(prefix="/analyze", tags=["분석"])
@@ -17,3 +18,19 @@ def analyze(email: EmailRequest):
         return analyze_email(email)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"분석 중 오류 발생: {str(e)}")
+    
+@router.post("/gmail", response_model=list[AnalysisResult])
+def analyze_gmail(count: int = 5):
+    """
+    Gmail 받은편지함에서 최근 이메일을 가져와서 피싱 분석
+    - count: 분석할 이메일 수 (기본값 5)
+    """
+    try:
+        emails = get_recent_emails(count)
+        results = []
+        for email in emails:
+            result = analyze_email(EmailRequest(**email))
+            results.append(result)
+        return results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Gmail 분석 중 오류 발생: {str(e)}")
