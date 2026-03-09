@@ -1,6 +1,7 @@
 # 🔐 피싱 이메일 탐지기
 
 Claude AI를 활용해 이메일의 피싱 여부를 자동으로 분석하는 FastAPI 기반 REST API 서버입니다.
+Gmail API와 연동하여 받은편지함의 이메일을 자동으로 가져와 분석할 수 있습니다.
 
 ---
 
@@ -27,6 +28,7 @@ Claude AI를 활용해 이메일의 피싱 여부를 자동으로 분석하는 F
 
 ```bash
 pip install fastapi uvicorn anthropic pydantic python-dotenv
+pip install google-auth google-auth-oauthlib google-api-python-client
 ```
 
 ### 2. API 키 설정
@@ -39,13 +41,20 @@ ANTHROPIC_API_KEY=여기에_실제_API키_입력
 
 > API 키 발급: https://console.anthropic.com
 
-### 3. 서버 실행
+### 3. Gmail API 설정
+
+Google Cloud Console에서 Gmail API를 활성화하고 OAuth 인증 정보를 발급받으세요.
+발급받은 파일을 `credentials.json` 으로 저장하고 프로젝트 루트에 넣어주세요.
+
+> Gmail API 설정: https://console.cloud.google.com
+
+### 4. 서버 실행
 
 ```bash
 python main.py
 ```
 
-### 4. 서버 종료
+### 5. 서버 종료
 
 ```
 Ctrl + C
@@ -63,19 +72,17 @@ http://localhost:8000/docs
 
 ---
 
-### Step 1. POST /analyze 클릭
+### ✉️ 방법 1. 이메일 직접 입력 분석
+
+#### Step 1. POST /analyze 클릭
 
 화면에서 **`POST /analyze`** 버튼을 클릭해 펼쳐주세요.
 
----
-
-### Step 2. Try it out 클릭
+#### Step 2. Try it out 클릭
 
 오른쪽 상단의 **`Try it out`** 버튼을 클릭하세요.
 
----
-
-### Step 3. 분석할 이메일 입력
+#### Step 3. 분석할 이메일 입력
 
 아래 형식으로 이메일 내용을 입력하세요.
 
@@ -100,11 +107,32 @@ http://localhost:8000/docs
 > `sender`(발신자), `subject`(제목)는 선택사항입니다.
 > `body`(본문)는 필수입니다.
 
----
-
-### Step 4. Execute 클릭
+#### Step 4. Execute 클릭
 
 **`Execute`** 버튼을 클릭하면 분석이 시작됩니다.
+
+---
+
+### 📬 방법 2. Gmail 자동 연동 분석
+
+#### Step 1. POST /analyze/gmail 클릭
+
+화면에서 **`POST /analyze/gmail`** 버튼을 클릭해 펼쳐주세요.
+
+#### Step 2. Try it out 클릭
+
+오른쪽 상단의 **`Try it out`** 버튼을 클릭하세요.
+
+#### Step 3. 분석할 이메일 수 입력
+
+`count` 에 분석할 이메일 수를 입력하세요. (기본값: 5)
+
+#### Step 4. Execute 클릭
+
+**`Execute`** 버튼을 클릭하면 브라우저에서 Google 로그인 창이 열립니다.
+로그인 완료 후 창을 닫으면 자동으로 분석이 시작됩니다.
+
+> 최초 실행 시에만 로그인이 필요합니다. 이후에는 자동으로 인증됩니다.
 
 ---
 
@@ -134,15 +162,17 @@ http://localhost:8000/docs
 
 ```
 phishing_detector/
-├── main.py                # FastAPI 앱 진입점
-├── requirements.txt       # 의존 패키지 목록
-├── .env                   # API 키 설정 (GitHub 비공개)
+├── main.py                  # FastAPI 앱 진입점
+├── requirements.txt         # 의존 패키지 목록
+├── .env                     # API 키 설정 (GitHub 비공개)
+├── credentials.json         # Google OAuth 인증 정보 (GitHub 비공개)
 ├── models/
-│   └── schemas.py         # 요청/응답 데이터 구조
+│   └── schemas.py           # 요청/응답 데이터 구조
 ├── routes/
-│   └── analyze.py         # API 엔드포인트
+│   └── analyze.py           # API 엔드포인트
 └── services/
-    └── analyzer.py        # Claude API 분석 로직
+    ├── analyzer.py          # Claude API 분석 로직
+    └── gmail_service.py     # Gmail API 연동 로직
 ```
 
 ---
@@ -153,10 +183,15 @@ phishing_detector/
 | ------------- | ---------------------- |
 | API 서버      | FastAPI                |
 | AI 분석       | Claude API (Anthropic) |
+| Gmail 연동    | Gmail API (Google)     |
 | 데이터 검증   | Pydantic               |
 | 환경변수 관리 | python-dotenv          |
+
+---
 
 ## 📋 요구사항
 
 - Python 3.11.9
 - Anthropic API 키 ([발급 바로가기](https://console.anthropic.com))
+- Google Cloud 프로젝트 및 Gmail API 활성화 ([설정 바로가기](https://console.cloud.google.com))
+- `credentials.json` (Google OAuth 인증 정보)
