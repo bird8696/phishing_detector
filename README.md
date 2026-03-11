@@ -1,7 +1,7 @@
 # 🔐 피싱 이메일 탐지기
 
-Claude AI를 활용해 이메일의 피싱 여부를 자동으로 분석하는 FastAPI 기반 REST API 서버입니다.
-Gmail API와 연동하여 받은편지함의 이메일을 자동으로 가져와 분석할 수 있습니다.
+Claude AI와 Gmail API를 활용해 이메일의 피싱 여부를 자동으로 분석하고,
+피싱으로 판단된 이메일을 자동으로 격리하는 FastAPI 기반 REST API 서버입니다.
 
 ---
 
@@ -10,6 +10,8 @@ Gmail API와 연동하여 받은편지함의 이메일을 자동으로 가져와
 피싱 이메일은 개인정보 탈취, 금융 사기 등에 악용되는 대표적인 사이버 공격입니다.
 이 프로젝트는 Anthropic의 **Claude AI** 에게 보안 전문가 역할을 부여하여,
 별도의 학습 데이터 없이도 이메일의 피싱 여부를 분석하고 위험도와 대응 방법을 제시합니다.
+또한 Gmail API와 연동하여 받은편지함의 이메일을 자동으로 분석하고,
+피싱으로 판단된 이메일은 **`📁 피싱의심`** 폴더로 자동 격리합니다.
 
 ### 기존 머신러닝 방식과의 차이점
 
@@ -19,6 +21,7 @@ Gmail API와 연동하여 받은편지함의 이메일을 자동으로 가져와
 | 개발 기간             | 수주 이상         | 수 시간                |
 | 판단 근거 설명        | 어려움            | **자연어로 설명 가능** |
 | 새로운 피싱 패턴 대응 | 재학습 필요       | **즉시 대응**          |
+| 피싱 이메일 격리      | 별도 구현 필요    | **자동 격리**          |
 
 ---
 
@@ -31,7 +34,7 @@ pip install fastapi uvicorn anthropic pydantic python-dotenv
 pip install google-auth google-auth-oauthlib google-api-python-client
 ```
 
-### 2. API 키 설정
+### 2. Anthropic API 키 설정
 
 `.env` 파일에 Anthropic API 키를 입력하세요.
 
@@ -113,7 +116,7 @@ http://localhost:8000/docs
 
 ---
 
-### 📬 방법 2. Gmail 자동 연동 분석
+### 📬 방법 2. Gmail 자동 연동 분석 + 자동 격리
 
 #### Step 1. POST /analyze/gmail 클릭
 
@@ -134,9 +137,14 @@ http://localhost:8000/docs
 
 > 최초 실행 시에만 로그인이 필요합니다. 이후에는 자동으로 인증됩니다.
 
+#### Step 5. 자동 격리 확인
+
+분석 완료 후 Gmail에서 **`📁 피싱의심`** 폴더를 확인하세요.
+피싱으로 판단된 이메일이 자동으로 이동되어 있습니다.
+
 ---
 
-### Step 5. 결과 확인
+### 📊 결과 확인
 
 **Response body** 에서 분석 결과를 확인하세요.
 
@@ -158,13 +166,28 @@ http://localhost:8000/docs
 
 ---
 
+## 🔄 자동 격리 흐름
+
+```
+Gmail 받은편지함
+        ↓
+Gmail API로 이메일 자동 읽기
+        ↓
+Claude AI 피싱 분석
+        ↓
+피싱 의심 → 📁 피싱의심 폴더로 자동 이동
+정상       → 받은편지함 유지
+```
+
+---
+
 ## 🗂 프로젝트 구조
 
 ```
 phishing_detector/
 ├── main.py                  # FastAPI 앱 진입점
 ├── requirements.txt         # 의존 패키지 목록
-├── .env                     # API 키 설정 (GitHub 비공개)
+├── .env                     # Anthropic API 키 (GitHub 비공개)
 ├── credentials.json         # Google OAuth 인증 정보 (GitHub 비공개)
 ├── models/
 │   └── schemas.py           # 요청/응답 데이터 구조
@@ -172,7 +195,7 @@ phishing_detector/
 │   └── analyze.py           # API 엔드포인트
 └── services/
     ├── analyzer.py          # Claude API 분석 로직
-    └── gmail_service.py     # Gmail API 연동 로직
+    └── gmail_service.py     # Gmail API 연동 및 자동 격리 로직
 ```
 
 ---
