@@ -3,7 +3,6 @@ from models.schemas import EmailRequest, AnalysisResult
 from services.analyzer import analyze_email
 from services.gmail_service import get_recent_emails, get_or_create_label, move_to_phishing
 
-# APIRouter : FastAPI에서 엔드포인트를 모아서 관리하는 도구
 router = APIRouter(prefix="/analyze", tags=["분석"])
 
 
@@ -17,15 +16,14 @@ def analyze(email: EmailRequest):
 
 
 @router.post("/gmail", response_model=list[AnalysisResult])
-def analyze_gmail(count: int = 5):
+def analyze_gmail(count: int = 5, phishing_only: bool = False):
     """
     Gmail 받은편지함에서 최근 이메일을 가져와서 피싱 분석
-    피싱으로 판단된 이메일은 자동으로 '📁 피싱의심' 폴더로 이동
+    - count: 분석할 이메일 수 (기본값 5)
+    - phishing_only: True면 피싱 의심 이메일만 반환 (기본값 False)
     """
     try:
         emails, service = get_recent_emails(count)
-
-        # 피싱의심 라벨 ID 가져오기 (없으면 자동 생성)
         label_id = get_or_create_label(service)
 
         results = []
@@ -39,6 +37,10 @@ def analyze_gmail(count: int = 5):
             # 피싱으로 판단되면 자동으로 폴더 이동
             if result.is_phishing:
                 move_to_phishing(service, email["id"], label_id)
+
+            # phishing_only=True면 피싱만 추가
+            if phishing_only and not result.is_phishing:
+                continue
 
             results.append(result)
 
